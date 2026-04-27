@@ -1,0 +1,41 @@
+/* @tailwind base; */
+/* @tailwind components; */
+/* @tailwind utilities; */
+
+@import "tailwindcss";
+
+@theme {
+  --color-premium-beige: #F5F5F0;
+  --color-premium-cream: #FAF9F6;
+  --color-premium-gold: #C5A059;
+  --color-premium-black: #1A1A1A;
+  --color-premium-gray: #4A4A4A;
+  --color-premium-lightGray: #E5E5E5;
+  
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  
+  --shadow-premium: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-premium-hover: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
+}
+
+@layer base {
+  body {
+    @apply bg-premium-beige text-premium-black font-sans;
+  }
+}
+
+@utility premium-card {
+  @apply bg-white rounded-2xl shadow-premium p-6 border border-premium-lightGray/50;
+}
+
+@utility premium-button-primary {
+  @apply bg-premium-black text-white px-6 py-2.5 rounded-xl font-medium transition-all hover:bg-premium-gray active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility premium-button-secondary {
+  @apply bg-white text-premium-black border border-premium-lightGray px-6 py-2.5 rounded-xl font-medium transition-all hover:bg-premium-beige active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+@utility premium-input {
+  @apply w-full px-4 py-3 rounded-xl border border-premium-lightGray focus:border-premium-gold focus:ring-1 focus:ring-premium-gold outline-none transition-all bg-white/50;
+}
