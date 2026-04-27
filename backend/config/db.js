@@ -2,9 +2,18 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI is not defined in environment variables.');
+    }
+
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 10000,
+    });
+
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
+    console.error('MongoDB connection failed.');
+    console.error('Please verify MONGODB_URI, Atlas network access, and IP whitelist.');
     console.error(`Error: ${error.message}`);
     process.exit(1);
   }
