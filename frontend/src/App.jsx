@@ -5,7 +5,6 @@ import Login from './pages/auth/Login';
 import Signup from './pages/auth/Signup';
 import Dashboard from './pages/dashboard/Dashboard';
 import StandUpForm from './pages/dashboard/StandUpForm';
-import TeamManagement from './pages/dashboard/TeamManagement';
 import TeamPage from './pages/dashboard/Team';
 import SettingsPage from './pages/dashboard/Settings';
 import TeamFeed from './pages/dashboard/TeamFeed';
@@ -62,6 +61,12 @@ class ErrorBoundary extends Component {
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
   const location = useLocation();
+  
+  console.group('🛡️ ProtectedRoute');
+  console.log('user:', user);
+  console.log('location.pathname:', location.pathname);
+  console.log('loading:', loading);
+  console.groupEnd();
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-premium-beige">
@@ -71,9 +76,7 @@ const ProtectedRoute = ({ children }) => {
   
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   
-  // Removed hard redirect for teamId to allow navigation.
-  // Instead, individual components or DashboardLayout will handle the "no team" state.
-  
+  console.log('✅ ProtectedRoute - Rendering children');
   return <DashboardLayout>{children}</DashboardLayout>;
 };
 
@@ -95,7 +98,6 @@ function App() {
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
             
-            <Route path="/team-setup" element={<ProtectedRoute><TeamManagement /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/feed" element={<ProtectedRoute><TeamFeed /></ProtectedRoute>} />
             <Route path="/blockers" element={<ProtectedRoute><BlockersPage /></ProtectedRoute>} />

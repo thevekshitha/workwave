@@ -2,6 +2,17 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Layout, Calendar, Users, AlertCircle, BarChart3, Settings, LogOut, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
+const isTeamIdValid = (teamId) => {
+  return (
+    teamId !== null &&
+    teamId !== undefined &&
+    teamId !== '' &&
+    teamId !== 'null' &&
+    teamId !== 'undefined' &&
+    (typeof teamId !== 'string' || teamId.trim() !== '')
+  );
+};
+
 const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
   const { logout, user } = useAuth();
@@ -69,7 +80,9 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             <div className="px-4 py-2 bg-premium-beige/50 rounded-xl">
               <p className="text-[10px] font-bold text-premium-gray uppercase tracking-widest">Team ID</p>
               <p className="text-xs font-mono truncate text-premium-black">
-                {user?.teamId || 'No team joined'}
+                {isTeamIdValid(user?.teamId) ? (
+                  typeof user.teamId === 'object' ? (user.teamId?.teamId || user.teamId) : user.teamId
+                ) : 'No team joined'}
               </p>
             </div>
             <button 

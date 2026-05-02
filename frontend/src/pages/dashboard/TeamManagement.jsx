@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -9,8 +9,14 @@ const TeamManagement = () => {
   const [teamId, setTeamId] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { user, setUser } = useAuth();
+  const { user, loading: authLoading, setUser } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!authLoading && user?.teamId) {
+      navigate('/dashboard');
+    }
+  }, [user, authLoading, navigate]);
 
   const handleCreateTeam = async (e) => {
     e.preventDefault();
@@ -54,6 +60,14 @@ const TeamManagement = () => {
     }
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-premium-beige">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-premium-black"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto py-12 px-4">
       <div className="text-center mb-12">
@@ -74,71 +88,92 @@ const TeamManagement = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Create Team */}
-        <div className="premium-card flex flex-col h-full hover:border-premium-gold/30 transition-all duration-300">
-          <div className="mb-6">
-            <div className="h-12 w-12 bg-premium-beige rounded-2xl flex items-center justify-center mb-4">
-              <Plus className="text-premium-black" size={24} />
+        {/* Only show Create Team if user doesn't have a team yet */}
+        {!user?.teamId && (
+          <div className="premium-card flex flex-col h-full hover:border-premium-gold/30 transition-all duration-300">
+            <div className="mb-6">
+              <div className="h-12 w-12 bg-premium-beige rounded-2xl flex items-center justify-center mb-4">
+                <Plus className="text-premium-black" size={24} />
+              </div>
+              <h2 className="text-2xl font-bold text-premium-black">Create a Team</h2>
+              <p className="text-premium-gray text-sm mt-1">Start a new space for your remote team (you will be the manager).</p>
             </div>
-            <h2 className="text-2xl font-bold text-premium-black">Create a Team</h2>
-            <p className="text-premium-gray text-sm mt-1">Start a new space for your remote team.</p>
+            
+            <form onSubmit={handleCreateTeam} className="space-y-4 mt-auto">
+              <div>
+                <label className="block text-xs font-bold text-premium-gray uppercase tracking-widest mb-1.5 ml-1">Team Name</label>
+                <input
+                  type="text"
+                  className="premium-input"
+                  placeholder="e.g. Engineering Alpha"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !teamName}
+                className="w-full premium-button-primary flex items-center justify-center gap-2"
+              >
+                {loading ? 'Creating...' : 'Create Team'}
+                <ArrowRight size={18} />
+              </button>
+            </form>
           </div>
-          
-          <form onSubmit={handleCreateTeam} className="space-y-4 mt-auto">
-            <div>
-              <label className="block text-xs font-bold text-premium-gray uppercase tracking-widest mb-1.5 ml-1">Team Name</label>
-              <input
-                type="text"
-                className="premium-input"
-                placeholder="e.g. Engineering Alpha"
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={loading || !teamName}
-              className="w-full premium-button-primary flex items-center justify-center gap-2"
-            >
-              {loading ? 'Creating...' : 'Create Team'}
-              <ArrowRight size={18} />
-            </button>
-          </form>
-        </div>
+        )}
 
-        {/* Join Team */}
-        <div className="premium-card flex flex-col h-full hover:border-premium-gold/30 transition-all duration-300">
-          <div className="mb-6">
-            <div className="h-12 w-12 bg-premium-beige rounded-2xl flex items-center justify-center mb-4">
-              <UserPlus className="text-premium-black" size={24} />
+        {/* Join Team is always shown if user doesn't have a team */}
+        {!user?.teamId && (
+          <div className="premium-card flex flex-col h-full hover:border-premium-gold/30 transition-all duration-300">
+            <div className="mb-6">
+              <div className="h-12 w-12 bg-premium-beige rounded-2xl flex items-center justify-center mb-4">
+                <UserPlus className="text-premium-black" size={24} />
+              </div>
+              <h2 className="text-2xl font-bold text-premium-black">Join a Team</h2>
+              <p className="text-premium-gray text-sm mt-1">Enter a team ID to join your colleagues.</p>
             </div>
-            <h2 className="text-2xl font-bold text-premium-black">Join a Team</h2>
-            <p className="text-premium-gray text-sm mt-1">Enter a team ID to join your colleagues.</p>
+            
+            <form onSubmit={handleJoinTeam} className="space-y-4 mt-auto">
+              <div>
+                <label className="block text-xs font-bold text-premium-gray uppercase tracking-widest mb-1.5 ml-1">Team ID</label>
+                <input
+                  type="text"
+                  className="premium-input"
+                  placeholder="Paste team ID here"
+                  value={teamId}
+                  onChange={(e) => setTeamId(e.target.value)}
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading || !teamId}
+                className="w-full premium-button-secondary flex items-center justify-center gap-2"
+              >
+                {loading ? 'Joining...' : 'Join Team'}
+                <ArrowRight size={18} />
+              </button>
+            </form>
           </div>
-          
-          <form onSubmit={handleJoinTeam} className="space-y-4 mt-auto">
-            <div>
-              <label className="block text-xs font-bold text-premium-gray uppercase tracking-widest mb-1.5 ml-1">Team ID</label>
-              <input
-                type="text"
-                className="premium-input"
-                placeholder="Paste team ID here"
-                value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                required
-              />
+        )}
+
+        {/* If user already has a team, show a message */}
+        {user?.teamId && (
+          <div className="md:col-span-2 premium-card text-center py-16">
+            <div className="inline-flex items-center justify-center p-6 bg-premium-beige rounded-3xl mb-6">
+              <Users className="text-premium-black" size={40} />
             </div>
+            <h2 className="text-2xl font-bold text-premium-black mb-2">You're already in a team!</h2>
+            <p className="text-premium-gray mb-8">Your Team ID: <span className="font-mono font-bold text-premium-black">{user.teamId}</span></p>
             <button
-              type="submit"
-              disabled={loading || !teamId}
-              className="w-full premium-button-secondary flex items-center justify-center gap-2"
+              onClick={() => navigate('/dashboard')}
+              className="premium-button-primary px-8"
             >
-              {loading ? 'Joining...' : 'Join Team'}
-              <ArrowRight size={18} />
+              Go to Dashboard
             </button>
-          </form>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

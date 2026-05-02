@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { 
   Users, 
@@ -31,6 +32,7 @@ import { motion } from 'framer-motion';
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     teamMembers: 0,
     dailyUpdates: 0,
@@ -46,11 +48,35 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [updatesRes, blockersRes, membersRes] = await Promise.all([
-          api.get('/updates/feed'),
-          api.get('/updates/blockers'),
-          api.get('/teams/members')
-        ]);
+        if (!user?.teamId) {
+          setLoading(false);
+          return;
+        }
+
+        let updatesRes = { data: { data: [] } };
+        let blockersRes = { data: { data: [] } };
+        let membersRes = { data: { data: [] } };
+
+        try {
+          updatesRes = await api.get('/updates/feed');
+          console.log("✅ API Feed Response:", updatesRes.data);
+        } catch (err) {
+          console.error("❌ Error fetching feed:", err);
+        }
+
+        try {
+          blockersRes = await api.get('/updates/blockers');
+          console.log("✅ API Blockers Response:", blockersRes.data);
+        } catch (err) {
+          console.error("❌ Error fetching blockers:", err);
+        }
+
+        try {
+          membersRes = await api.get('/teams/members');
+          console.log("✅ API Members Response:", membersRes.data);
+        } catch (err) {
+          console.error("❌ Error fetching members:", err);
+        }
 
         const allUpdates = updatesRes?.data?.data || [];
         const today = new Date().toISOString().split('T')[0];
@@ -67,7 +93,6 @@ const Dashboard = () => {
           pendingUpdates: Math.max(0, totalMembers - todayUpdates.length)
         });
 
-        // Mock data for the weekly chart
         const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const mockChartData = days.map(day => ({
           name: day,
@@ -75,6 +100,7 @@ const Dashboard = () => {
           completion: Math.floor(Math.random() * 40) + 60
         }));
         setChartData(mockChartData);
+        setError(null);
 
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
@@ -84,7 +110,7 @@ const Dashboard = () => {
       }
     };
 
-    if (user?.teamId) {
+    if (user && user.teamId) {
       fetchDashboardData();
     } else {
       setLoading(false);

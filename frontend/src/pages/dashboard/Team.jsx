@@ -25,16 +25,22 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import CreateTeam from '../../components/team/CreateTeam';
+import JoinTeam from '../../components/team/JoinTeam';
 
 const TeamPage = () => {
-  const { user } = useAuth();
+  const { user, setUser, loading: authLoading } = useAuth();
   const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showJoinTeamModal, setShowJoinTeamModal] = useState(false);
+  const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
+  const [joinTeamId, setJoinTeamId] = useState('');
+  const [createTeamName, setCreateTeamName] = useState('');
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -45,12 +51,14 @@ const TeamPage = () => {
         console.error('Error fetching members:', err);
         setMembers([]);
       } finally {
-        setLoading(false);
+        setMembersLoading(false);
       }
     };
 
     if (user?.teamId) {
       fetchMembers();
+    } else {
+      setMembersLoading(false);
     }
   }, [user]);
 
@@ -59,6 +67,54 @@ const TeamPage = () => {
       navigator.clipboard.writeText(user.teamId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const normalizeUser = (userData) => {
+    let teamId = userData?.teamId;
+    if (typeof teamId === 'object' && teamId !== null) {
+      teamId = teamId?.teamId || String(teamId);
+    }
+    if (teamId === 'null' || teamId === 'undefined' || teamId === '') {
+      teamId = null;
+    }
+    return {
+      ...userData,
+      teamId: teamId,
+    };
+  };
+
+  const handleCreateTeam = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/teams', { name: createTeamName.trim() });
+      const team = res.data?.data?.team;
+      if (team?.teamId) {
+        const updatedUser = { ...user, teamId: team.teamId, role: 'manager' };
+        setUser(updatedUser);
+        alert('Team created successfully!');
+        setShowCreateTeamModal(false);
+        setCreateTeamName('');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to create team');
+    }
+  };
+
+  const handleJoinTeam = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post(`/teams/join/${joinTeamId}`);
+      const team = res.data?.data?.team;
+      if (team?.teamId) {
+        const updatedUser = { ...user, teamId: team.teamId };
+        setUser(updatedUser);
+        alert('Successfully joined the team!');
+        setShowJoinTeamModal(false);
+        setJoinTeamId('');
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to join team');
     }
   };
 
@@ -101,11 +157,76 @@ const TeamPage = () => {
     m?.role?.toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
 
-  if (loading) return (
+  const isTeamIdValid = (teamId) => {
+    return (
+      teamId !== null &&
+      teamId !== undefined &&
+      teamId !== '' &&
+      teamId !== 'null' &&
+      teamId !== 'undefined' &&
+      (typeof teamId !== 'string' || teamId.trim() !== '')
+    );
+  };
+  
+  console.log('Team.jsx - user object:', user);
+  console.log('Team.jsx - isTeamIdValid(user?.teamId):', isTeamIdValid(user?.teamId));
+  
+  if (authLoading || membersLoading) return (
     <div className="flex items-center justify-center h-[60vh]">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-premium-black"></div>
     </div>
   );
+
+  if (!isTeamIdValid(user?.teamId)) {
+    return (
+      <div className="max-w-4xl mx-auto space-y-8 pb-12">
+        <div className="flex flex-col items-center justify-center min-h-[70vh]">
+          <div className="text-center mb-10">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="h-20 w-20 bg-premium-beige rounded-3xl flex items-center justify-center mx-auto mb-6"
+            >
+              <Users size={40} className="text-premium-gold" />
+            </motion.div>
+            <h1 className="text-3xl font-bold text-premium-black tracking-tight mb-3">Join a Team</h1>
+            <p className="text-premium-gray font-medium">Enter the team ID provided by your manager to join the team</p>
+          </div>
+          
+          <div className="w-full max-w-lg">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="premium-card p-10"
+            >
+              <div className="h-14 w-14 bg-premium-beige rounded-2xl flex items-center justify-center mb-5">
+                <UserPlus size={28} className="text-premium-black" />
+              </div>
+              <h2 className="text-xl font-bold text-premium-black mb-2">Join a Team</h2>
+              <p className="text-xs text-premium-gray mb-6">Enter the team ID provided by your manager</p>
+              
+              <form onSubmit={handleJoinTeam} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-premium-gray uppercase tracking-widest ml-1">Team ID</label>
+                  <input 
+                    type="text" 
+                    required
+                    placeholder="Enter team ID"
+                    className="premium-input"
+                    value={joinTeamId}
+                    onChange={(e) => setJoinTeamId(e.target.value)}
+                  />
+                </div>
+                <button type="submit" className="premium-button-primary w-full py-3 shadow-premium hover:shadow-premium-hover">
+                  Join Team
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-12">

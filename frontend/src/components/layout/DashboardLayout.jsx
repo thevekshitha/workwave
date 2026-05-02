@@ -5,13 +5,24 @@ import Navbar from './Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { AlertTriangle, ArrowRight } from 'lucide-react';
 
+const isTeamIdValid = (teamId) => {
+  return (
+    teamId !== null &&
+    teamId !== undefined &&
+    teamId !== '' &&
+    teamId !== 'null' &&
+    teamId !== 'undefined' &&
+    (typeof teamId !== 'string' || teamId.trim() !== '')
+  );
+};
+
 const DashboardLayout = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { user } = useAuth();
   const location = useLocation();
 
-  const isTeamSetupPage = location.pathname === '/team-setup';
-  const hasNoTeam = !user?.teamId && !isTeamSetupPage;
+  const isTeamSetupPage = location.pathname === '/team';
+  const hasNoTeam = !isTeamIdValid(user?.teamId) && !isTeamSetupPage;
 
   return (
     <div className="min-h-screen bg-premium-beige">
@@ -32,7 +43,7 @@ const DashboardLayout = ({ children }) => {
               </div>
             </div>
             <Link 
-              to="/team-setup" 
+              to="/team" 
               className="flex items-center gap-2 px-4 py-2 bg-premium-black text-white text-xs font-bold rounded-xl hover:shadow-lg transition-all whitespace-nowrap"
             >
               Set up Team <ArrowRight size={14} />
